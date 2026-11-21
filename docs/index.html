@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Baileys Caller - Sistema de llamadas de WhatsApp desde un panel web moderno con autenticación QR y código de 8 dígitos.">
+  <title>Baileys Caller - Llamadas de WhatsApp desde la web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #075e54;
+      --primary-dark: #054b44;
+      --primary-light: #e0f2f1;
+      --accent: #128c7e;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #075e54;
+      --warning: #d1ad00;
+      --error: #d43d3d;
+      --radius: 16px;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.12);
+      --transition: all 0.3s ease;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Navbar */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      z-index: 1000;
+      transition: var(--transition);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .nav-btn {
+      background: var(--primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: var(--transition);
+      border: none;
+      cursor: pointer;
+    }
+
+    .nav-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 120px 2rem 80px;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 50px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(7, 94, 84, 0.1);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero p {
+      font-size: clamp(1.1rem, 2vw, 1.375rem);
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: var(--transition);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--primary);
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: var(--transition);
+      border: 2px solid var(--primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* Features Section */
+    .features {
+      padding: 80px 2rem;
+      background: var(--surface);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .section-header h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      padding: 2rem;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      transition: var(--transition);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow);
+      border-color: var(--primary);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Connection Methods */
+    .connection {
+      padding: 80px 2rem;
+      background: var(--bg);
+    }
+
+    .methods-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+
+    .method-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 2.5rem;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+
+    .method-card:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: var(--primary);
+    }
+
+    .method-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .method-card h3 {
+      font-size: 1.375rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .method-card p {
+      color: var(--text-muted);
+      font-size: 0.975rem;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .method-steps {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .step:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .step-text {
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    /* Calls Section */
+    .calls {
+      padding: 80px 2rem;
+      background: var(--surface);
+    }
+
+    .calls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .call-card {
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      transition: var(--transition);
+    }
+
+    .call-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow);
+    }
+
+    .call-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .call-card h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    .call-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    /* TTS Section */
+    .tts {
+      padding: 80px 2rem;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+    }
+
+    .tts .section-header h2,
+    .tts .section-header p {
+      color: white;
+    }
+
+    .tts-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .tts-text h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .tts-text p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .tts-voices {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .voice-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .voice-check {
+      width: 20px;
+      height: 20px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .voice-info span {
+      display: block;
+      font-weight: 600;
+    }
+
+    .voice-info small {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.875rem;
+    }
+
+    /* Installation */
+    .installation {
+      padding: 80px 2rem;
+      background: var(--bg);
+    }
+
+    .install-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 3rem;
+      max-width: 700px;
+      margin: 0 auto;
+      box-shadow: var(--shadow);
+    }
+
+    .install-card h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .install-code {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 1.5rem;
+      font-family: "SF Mono", Monaco, monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin-bottom: 1.5rem;
+    }
+
+    .install-code pre {
+      margin: 0;
+      white-space: pre-wrap;
+    }
+
+    .install-features {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .install-feature {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: 1px solid rgba(7, 94, 84, 0.1);
+    }
+
+    /* CTA Section */
+    .cta {
+      padding: 80px 2rem;
+      text-align: center;
+    }
+
+    .cta-card {
+      background: var(--primary);
+      border-radius: var(--radius);
+      padding: 3rem 2rem;
+      max-width: 700px;
+      margin: 0 auto;
+      color: white;
+    }
+
+    .cta-card h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .cta-card p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 40px 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .footer-links a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .footer-text {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-bottom: 1px solid var(--border);
+        flex-direction: column;
+        padding: 1.5rem 2rem;
+        gap: 1rem;
+      }
+
+      .nav-links.active {
+        display: flex;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .btn-primary,
+      .btn-secondary {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+      }
+
+      .hero {
+        padding: 100px 1.5rem 60px;
+      }
+
+      .features,
+      .connection,
+      .calls,
+      .tts,
+      .installation,
+      .cta {
+        padding: 60px 1.5rem;
+      }
+
+      .install-card {
+        padding: 2rem 1.5rem;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .feature-card,
+    .method-card,
+    .call-card {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .feature-card:nth-child(1) { animation-delay: 0.1s; }
+    .feature-card:nth-child(2) { animation-delay: 0.2s; }
+    .feature-card:nth-child(3) { animation-delay: 0.3s; }
+    .feature-card:nth-child(4) { animation-delay: 0.4s; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-icon">📞</div>
+        Baileys Caller
+      </a>
+      <div class="nav-links">
+        <a href="#features">Características</a>
+        <a href="#connection">Conexión</a>
+        <a href="#calls">Llamadas</a>
+        <a href="#tts">TTS</a>
+        <a href="#installation">Instalación</a>
+        <a href="#documentation">Documentación</a>
+      </div>
+      <a href="https://github.com/abrahamhr2009/baileys-caller" class="nav-btn" target="_blank">GitHub</a>
+      <button class="mobile-menu-btn" id="mobileMenu">☰</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">📞 Llamadas de WhatsApp desde la web</div>
+    <h1>Baileys Caller</h1>
+    <p>Sistema profesional de llamadas de WhatsApp con panel web moderno, autenticación por QR o código de 8 dígitos, y texto a voz (TTS) en español e inglés.</p>
+    <div class="hero-actions">
+      <a href="https://github.com/abrahamhr2009/baileys-caller" class="btn-primary" target="_blank">
+        Ver en GitHub
+      </a>
+      <a href="#installation" class="btn-secondary">
+        Instalar ahora
+      </a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Características principales</h2>
+        <p>Todo lo que necesitas para gestionar llamadas de WhatsApp desde tu navegador</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔐</div>
+          <h3>Autenticación dual</h3>
+          <p>Conecta WhatsApp mediante código QR o código de vinculación de 8 dígitos. Ambos métodos usan autenticación real de Baileys.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📞</div>
+          <h3>Llamadas salientes</h3>
+          <p>Realiza llamadas de voz individuales, detecta cuando suena, cuando contestan y cuándo finaliza.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔊</div>
+          <h3>Audio y TTS</h3>
+          <p>Reproduce archivos MP3, WAV o texto a voz en español e inglés durante las llamadas.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💾</div>
+          <h3>Persistencia</h3>
+          <p>Las sesiones se guardan en disco y se recuperan automáticamente tras reiniciar el servidor.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Connection -->
+  <section id="connection" class="connection">
+    <div class="container">
+      <div class="section-header">
+        <h2>Métodos de conexión</h2>
+        <p>Elige la forma que mejor se adapte a tu flujo de trabajo</p>
+      </div>
+      <div class="methods-grid">
+        <div class="method-card">
+          <div class="method-icon">📱</div>
+          <h3>Código QR</h3>
+          <p>Genera un código QR real de WhatsApp que puedes escanear desde la app móvil en Dispositivos vinculados.</p>
+          <div class="method-steps">
+            <div class="step">
+              <div class="step-number">1</div>
+              <div class="step-text">Haz clic en "Generar QR"</div>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div class="step-text">Escanea con WhatsApp > Ajustes > Dispositivos vinculados</div>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div class="step-text">El panel detecta la conexión automáticamente</div>
+            </div>
+          </div>
+        </div>
+        <div class="method-card">
+          <div class="method-icon">🔢</div>
+          <h3>Código de 8 dígitos</h3>
+          <p>Introduce tu número telefónico y genera un código de vinculación de 8 dígitos para emparejar el dispositivo.</p>
+          <div class="method-steps">
+            <div class="step">
+              <div class="step-number">1</div>
+              <div class="step-text">Introduce tu número con código de país</div>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div class="step-text">Solicita el código de 8 dígitos</div>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div class="step-text">Ingresa el código en WhatsApp para completar la vinculación</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calls -->
+  <section id="calls" class="calls">
+    <div class="container">
+      <div class="section-header">
+        <h2>Sistema de llamadas</h2>
+        <p>Control completo de llamadas de voz desde el panel web</p>
+      </div>
+      <div class="calls-grid">
+        <div class="call-card">
+          <div class="call-icon">📞</div>
+          <h3>Llamar</h3>
+          <p>Introduce el número de destino y haz clic en LLAMAR para iniciar una llamada saliente.</p>
+        </div>
+        <div class="call-card">
+          <div class="call-icon">📴</div>
+          <h3>Colgar</h3>
+          <p>Termina la llamada activa en cualquier momento con un solo clic.</p>
+        </div>
+        <div class="call-card">
+          <div class="call-icon">⏱️</div>
+          <h3>Control de duración</h3>
+          <p>Configura tiempo máximo de llamada y recibe notificaciones cuando finaliza.</p>
+        </div>
+        <div class="call-card">
+          <div class="call-icon">📊</div>
+          <h3>Historial</h3>
+          <p>Registro completo de todas las llamadas con estado, duración y motivo de finalización.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TTS -->
+  <section id="tts" class="tts">
+    <div class="container">
+      <div class="section-header">
+        <h2>Texto a voz (TTS)</h2>
+        <p>Reproduce mensajes de voz durante las llamadas sin servicios externos</p>
+      </div>
+      <div class="tts-content">
+        <div class="tts-text">
+          <h3>Voces disponibles</h3>
+          <p>Genera audio localmente con espeak-ng. No dependes de APIs externas ni de pago por uso.</p>
+          <div class="tts-voices">
+            <div class="voice-item">
+              <div class="voice-check">✓</div>
+              <div class="voice-info">
+                <span>Español (España)</span>
+                <small>es</small>
+              </div>
+            </div>
+            <div class="voice-item">
+              <div class="voice-check">✓</div>
+              <div class="voice-info">
+                <span>Español (Latinoamérica)</span>
+                <small>es-419</small>
+              </div>
+            </div>
+            <div class="voice-item">
+              <div class="voice-check">✓</div>
+              <div class="voice-info">
+                <span>English</span>
+                <small>en</small>
+              </div>
+            </div>
+            <div class="voice-item">
+              <div class="voice-check">✓</div>
+              <div class="voice-info">
+                <span>English (US)</span>
+                <small>en-us</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Installation -->
+  <section id="installation" class="installation">
+    <div class="container">
+      <div class="section-header">
+        <h2>Instalación rápida</h2>
+        <p>Pon en marcha Baileys Caller en minutos</p>
+      </div>
+      <div class="install-card">
+        <h3>🚀 Primeros pasos</h3>
+        <div class="install-code">
+          <pre>git clone https://github.com/abrahamhr2009/baileys-caller.git
+cd baileys-caller
+npm install
+npm run build
+npm start</pre>
+        </div>
+        <div class="install-features">
+          <span class="install-feature">Node.js ≥ 20</span>
+          <span class="install-feature">FFmpeg</span>
+          <span class="install-feature">espeak-ng</span>
+          <span class="install-feature">WhatsApp activo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="cta-card">
+      <h2>¿Listo para empezar?</h2>
+      <p>Accede al código completo y despliega en Railway con un clic.</p>
+      <a href="https://github.com/abrahamhr2009/baileys-caller" class="btn-primary" style="background: white; color: var(--primary);" target="_blank">
+        Abrir en GitHub
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="#features">Características</a>
+        <a href="#connection">Conexión</a>
+        <a href="#calls">Llamadas</a>
+        <a href="#tts">TTS</a>
+        <a href="#installation">Instalación</a>
+        <a href="https://github.com/abrahamhr2009/baileys-caller" target="_blank">GitHub</a>
+      </div>
+      <div class="footer-text">
+        &copy; 2026 Baileys Caller. Construido con Baileys, Node.js y TypeScript.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobileMenu');
+    const navLinks = document.querySelector('.nav-links');
+
+    mobileMenuBtn.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+    });
+
+    // Close mobile menu when clicking a link
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+      });
+    });
+
+    // Navbar scroll effect
+    window.addEventListener('scroll', () => {
+      const navbar = document.querySelector('.navbar');
+      if (window.scrollY > 50) {
+        navbar.style.padding = '0.5rem 2rem';
+        navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.08)';
+      } else {
+        navbar.style.padding = '1rem 2rem';
+        navbar.style.boxShadow = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

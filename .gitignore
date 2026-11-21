@@ -9,13 +9,15 @@ node_modules/
 # Sesiones de WhatsApp (Baileys auth state) - NUNCA subir a GitHub
 auth/
 *.session
-*.json
+# No ignorar package.json, package-lock.json, tsconfig.json, railway.json, etc.
+!*.json
 
 # Caché TTS
 tts-cache/
 
-# Build output
-dist/
+# Build output (comentado para mantener dist en el repo como el original)
+# dist/
+
 
 # Logs
 *.log
