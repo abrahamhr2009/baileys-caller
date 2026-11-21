@@ -1,0 +1,13 @@
+import { Server as IoServer } from "socket.io";
+import { VoipClient } from "./index.mjs";
+import AuthManager from "./auth-manager.mjs";
+import CallManager from "./call-manager.mjs";
+import { TtsManager } from "./tts.mjs";
+declare const app: import("express-serve-static-core").Express;
+declare const httpServer: import("http").Server<typeof import("http").IncomingMessage, typeof import("http").ServerResponse>;
+declare const io: IoServer<import("socket.io").DefaultEventsMap, import("socket.io").DefaultEventsMap, import("socket.io").DefaultEventsMap, any>;
+declare const authManager: AuthManager;
+declare const callManager: CallManager;
+declare const ttsManager: TtsManager;
+declare let voipClient: VoipClient | null;
+export { app, httpServer, io, authManager, callManager, ttsManager, voipClient };

@@ -37,7 +37,9 @@ export declare class ActiveCall extends EventEmitter {
 /** Top-level client. Connects to WhatsApp and lets you place calls. */
 export declare class VoipClient {
     #private;
-    constructor(config: VoipSdkConfig);
+    constructor(config: VoipSdkConfig & {
+        sock?: any;
+    });
     /** Connect to WhatsApp and bring up the WASM VoIP stack. */
     connect: () => Promise<void>;
     /** Place an outbound voice call. */

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Caller - Panel de Llamadas</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">📞</div>
+        <div class="brand-text">WhatsApp<br><span class="brand-sub">Caller</span></div>
+      </div>
+      <nav class="nav">
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-label">Panel</span>
+        </a>
+        <a href="#" class="nav-item" data-page="calls">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Llamadas</span>
+        </a>
+        <a href="#" class="nav-item" data-page="settings">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Ajustes</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="version">v1.0.0</div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+      <header class="header">
+        <h1 class="page-title" id="page-title">Panel de Control</h1>
+        <div class="header-actions">
+          <button class="btn btn-outline" id="btn-refresh-conn">🔄 Reconectar</button>
+        </div>
+      </header>
+
+      <!-- Dashboard page -->
+      <section id="page-dashboard" class="page active">
+        <!-- WhatsApp status -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Estado de WhatsApp</h2>
+          </div>
+          <div class="card-body">
+            <div class="status-row">
+              <div class="status-indicator" id="status-indicator">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Desconectado</span>
+              </div>
+              <div class="status-detail" id="status-detail">Sin sesión activa</div>
+            </div>
+            <div class="phone-number" id="phone-number" style="display:none;">
+              Número: <span id="phone-number-value"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connection methods -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Conectar WhatsApp</h2>
+          </div>
+          <div class="card-body">
+            <div class="method-tabs">
+              <button class="method-tab active" data-method="qr">Código QR</button>
+              <button class="method-tab" data-method="code">Código de 8 dígitos</button>
+            </div>
+
+            <!-- QR method -->
+            <div class="method-panel" id="method-qr" style="display:block;">
+              <div class="qr-container">
+                <div class="qr-placeholder" id="qr-placeholder">
+                  <div class="qr-empty">Escanea el QR con WhatsApp</div>
+                </div>
+                <img id="qr-image" class="qr-image" style="display:none;">
+                <div class="qr-actions">
+                  <button class="btn btn-primary" id="btn-gen-qr">Generar QR</button>
+                  <button class="btn btn-outline" id="btn-refresh-qr">Actualizar</button>
+                </div>
+              </div>
+              <div class="qr-hint">
+                Ve a WhatsApp > Ajustes > Dispositivos vinculados > Vincular dispositivo
+              </div>
+            </div>
+
+            <!-- Code method -->
+            <div class="method-panel" id="method-code" style="display:none;">
+              <div class="code-form">
+                <label class="form-label">Número de teléfono</label>
+                <div class="input-group">
+                  <input type="tel" id="input-phone" placeholder="+52 1 234 567 8900">
+                  <button class="btn btn-primary" id="btn-request-code">Solicitar código</button>
+                </div>
+              </div>
+              <div class="code-display" id="code-display" style="display:none;">
+                <div class="code-label">Código de vinculación (8 dígitos)</div>
+                <div class="code-value" id="code-value">---- ----</div>
+                <button class="btn btn-outline" id="btn-copy-code">Copiar</button>
+              </div>
+              <div class="code-hint">
+                En WhatsApp: Dispositivos vinculados > Vincular dispositivo > 
+                introducir código de 8 dígitos
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Call controls -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Realizar Llamada</h2>
+          </div>
+          <div class="card-body">
+            <div class="call-form">
+              <label class="form-label">Número de destino</label>
+              <input type="tel" id="input-call-number" placeholder="+52 1 234 567 8900">
+            </div>
+            <div class="call-options">
+              <label class="form-label">Audio</label>
+              <select id="select-audio" class="form-select">
+                <option value="silence">Silencio</option>
+                <option value="tts">Texto a voz (TTS)</option>
+              </select>
+              <div class="tts-options" id="tts-options" style="display:none;">
+                <label class="form-label">Idioma / Voz</label>
+                <select id="select-tts-voice" class="form-select"></select>
+                <div class="tts-text">
+                  <label class="form-label">Mensaje</label>
+                  <textarea id="input-tts-text" placeholder="Escribe el mensaje a reproducir"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="call-actions">
+              <button class="btn btn-call" id="btn-call">📞 LLAMAR</button>
+              <button class="btn btn-hangup" id="btn-hangup" disabled>📴 COLGAR</button>
+            </div>
+            <div class="call-status" id="call-status">
+              <span id="call-status-text">Listo para llamar</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Events console -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Consola de Eventos</h2>
+          </div>
+          <div class="card-body">
+            <div id="events-console" class="events-console"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Calls history page -->
+      <section id="page-calls" class="page">
+        <div class="card">
+          <div class="card-header">
+            <h2>Historial de Llamadas</h2>
+          </div>
+          <div class="card-body">
+            <table class="calls-table" id="calls-table">
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Número</th>
+                  <th>Estado</th>
+                  <th>Duración</th>
+                  <th>Motivo</th>
+                </tr>
+              </thead>
+              <tbody id="calls-table-body">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings page -->
+      <section id="page-settings" class="page">
+        <div class="card">
+          <div class="card-header">
+            <h2>Ajustes</h2>
+          </div>
+          <div class="card-body">
+            <div class="setting-item">
+              <label class="setting-label">Directorio de autenticación</label>
+              <span class="setting-value" id="setting-auth-dir"></span>
+            </div>
+            <div class="setting-item">
+              <label class="setting-label">Directorio TTS</label>
+              <span class="setting-value" id="setting-tts-dir"></span>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-danger" id="btn-clear-session">Borrar sesión</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

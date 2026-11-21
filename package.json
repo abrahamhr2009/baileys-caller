@@ -23,18 +23,27 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",
+    "start": "node dist/server.mjs",
+    "dev": "tsx src/server.mts",
     "example": "tsx examples/call.mts",
     "fetch-wasm": "node scripts/fetch-wasm-resources.mjs"
   },
   "dependencies": {
     "@roamhq/wrtc": "^0.10.0",
-    "qrcode-terminal": "^0.12.0"
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "socket.io": "^4.8.4"
   },
   "peerDependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc11"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
+    "@types/socket.io": "^3.0.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },

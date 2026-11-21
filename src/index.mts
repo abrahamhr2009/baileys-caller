@@ -146,6 +146,7 @@ export class VoipClient {
   #sock: any = null;
   #activeCall: ActiveCall | null = null;
   #baileys: any = null;
+  #externalSock: any = null;
 
   // Capture state populated when WASM negotiates audio params
   #capturePtr = 0;
@@ -155,8 +156,9 @@ export class VoipClient {
   #captureFramesPerChunk = 320;
   #feeder: AudioFeeder | null = null;
 
-  constructor(config: VoipSdkConfig) {
+  constructor(config: VoipSdkConfig & { sock?: any }) {
     this.#config = config;
+    if (config.sock) this.#externalSock = config.sock;
   }
 
   /** Connect to WhatsApp and bring up the WASM VoIP stack. */
@@ -165,6 +167,52 @@ export class VoipClient {
     const { useMultiFileAuthState, default: makeWASocket, DisconnectReason } = this.#baileys;
     const makeSocket: (opts: any) => any =
       makeWASocket ?? this.#baileys.makeWASocket ?? this.#baileys;
+
+    // Use externally-provided socket if available (shared with AuthManager)
+    if (this.#externalSock) {
+      this.#sock = this.#externalSock;
+      this.#signaling = new SignalingBridge({ sock: this.#sock });
+      await this.#signaling.init();
+
+      this.#relay = new RelayRtcTransport({
+        onTransportMessage: (data, ip, port) => this.#engine?.handleOnTransportMessage(data, ip, port),
+        onIceRtt: (rttMs, ip, port) => this.#engine?.updateIceRtt(rttMs, ip, port),
+      });
+
+      this.#engine = new WasmEngine({
+        callbacks: {
+          onSignalingXmpp: (peerJid, callId, xmlPayload) =>
+            this.#signaling!.sendSignaling(peerJid, callId, xmlPayload),
+          onCallEvent: (eventType, eventData) => this.#handleCallEvent(eventType, eventData),
+          sendDataToRelay: (data, ip, port) => this.#relay!.send(data, ip, port),
+          onAudioCaptureInit: (config) => this.#handleAudioCaptureInit(config),
+          onAudioCaptureStart: () => this.#handleAudioCaptureStart(),
+          onAudioCaptureStop: () => this.#handleAudioCaptureStop(),
+          onAudioPlaybackData: (audioData) => this.#activeCall?._emitAudio(audioData),
+          cryptoHkdf: computeHkdf,
+          hmacSha256: computeHmacSha256,
+        },
+      });
+
+      await this.#engine.initialize();
+      this.#signaling.attachEngine(this.#engine);
+
+      const selfPnJid = this.#sock.authState.creds.me?.id;
+      const selfLidJid = this.#sock.authState.creds.me?.lid;
+      this.#engine.initVoipStack(selfPnJid, toBareJid(selfPnJid), selfLidJid);
+      await this.#engine.waitForVoipStackReady();
+      try { this.#engine.updateNetworkMedium(2, 0); } catch {}
+
+      this.#sock.ws.on("CB:call", (node: any) => {
+        this.#signaling!.processIncomingCall(node, this.#engine!, this.#activeCall?.callId ?? "");
+      });
+      this.#sock.ws.on("CB:receipt", (node: any) => {
+        if (!isCallReceiptNode(node)) return;
+        this.#signaling!.processIncomingReceipt(node, this.#engine!, this.#activeCall?.callId ?? "");
+      });
+
+      return;
+    }
 
     const authDir = resolve(this.#config.authDir);
     const { state, saveCreds } = await useMultiFileAuthState(authDir);
@@ -336,11 +384,14 @@ export class VoipClient {
     this.#activeCall = null;
     this.#relay?.closeAll();
     this.#engine?.destroy();
-    this.#sock?.end?.();
+    // Only end the socket if we created it (not externally provided)
+    if (!this.#externalSock) {
+      this.#sock?.end?.();
+    }
     this.#engine = null;
     this.#relay = null;
     this.#signaling = null;
-    this.#sock = null;
+    if (!this.#externalSock) this.#sock = null;
   };
 
   // ─── private ──────────────────────────────────────────────────────────────
